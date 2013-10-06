@@ -26,7 +26,7 @@ function visit (node, parents) {
                 (n.params[0] ? extra(n.id.range[1], n.params[0].range[0]) : []),
                 extra(
                     (n.params.length
-                        ? n.params[n.params.length-1].range[0]
+                        ? n.params[n.params.length-1].range[1]
                         : n.id.range[1]
                     ),
                     n.body.range[0]
