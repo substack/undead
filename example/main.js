@@ -1,4 +1,4 @@
-function f (n) {
+function f (n, y) {
     return n + 2;
 }
 
@@ -11,5 +11,6 @@ function h (n) {
 }
 
 var obj = { h: h, f: f };
+var x = 5;
 
-console.log(obj.f(4));
+console.log(obj.f(4) + x);

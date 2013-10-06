@@ -134,7 +134,24 @@ function lookupBody (name, p)  {
     for (var j = 0; j < p.body.length; j++) {
         if (p.body[j].type === 'FunctionDeclaration'
         && p.body[j].id.name === name) {
-            return [ p.body[j], trailing(j) ];
+            var ps = p.body[j].params;
+            
+            return [
+                extra(p.body[j].range[0], p.body[j].id.range[1]),
+                extra(
+                    p.body[j].id.range[1],
+                    (ps.length ? ps[0].range[0] : p.body[j].body.range[0])
+                ),
+                p.body[j].body,
+                extra(
+                    (ps.length 
+                        ? ps[ps.length-1].range[1]
+                        : p.body[j].id.range[1]
+                    ),
+                    p.body[j].body.range[0]
+                ),
+                trailing(j)
+            ];
         }
         if (p.body[j].type === 'VariableDeclaration') {
             for (var k = 0; k < p.body[j].declarations.length; k++) {
