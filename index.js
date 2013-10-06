@@ -4,14 +4,31 @@ var concatMap = require('concat-map');
 module.exports = function (source) {
     var graph = {};
     var ast = esprima.parse(source, { range: true });
-    return visit(ast).sort(cmp);
+    return visit(ast).sort(cmp).reduce(uniq, []);
     
     function cmp (a, b) { return a.range[0] < b.range[0] ? -1 : 1 }
+    function uniq (acc, x) {
+        if (acc.length) {
+            var r = acc[acc.length-1].range;
+            var xr = x.range;
+            if (xr[0] === r[0] && xr[1] === r[1]) return acc;
+        }
+        return acc.concat(x);
+    }
 };
 
 function visit (node, parents) {
     if (parents === undefined) parents = [];
-    var next = function (n) { return visit(n, parents.concat(node)) }
+    var next = function (n) {
+        if (n.type === 'FunctionDeclaration') {
+            return [].concat(
+                extra(n.range[0], n.id.range[1]),
+                visit(n.body, parents.concat(node)),
+                extra(n.body.range[1], n.range[1])
+            );
+        }
+        return visit(n, parents.concat(node))
+    }
     
     if (node.type === 'Program') {
         return concatMap(node.body, next);
@@ -21,6 +38,13 @@ function visit (node, parents) {
             extra(node.range[0], node.expression.range[0]),
             next(node.expression),
             extra(node.expression.range[1], node.range[1])
+        );
+    }
+    else if (node.type === 'BlockStatement') {
+        return [].concat(
+            extra(node.range[0], node.body[0].range[0]),
+            concatMap(node.body, next),
+            extra(node.body[node.body.length-1].range[1], node.range[1])
         );
     }
     else if (node.type === 'CallExpression') {
@@ -33,13 +57,6 @@ function visit (node, parents) {
             extra(args[args.length-1].range[1], node.range[1])
         );
     }
-    else if (node.type === 'Identifier') {
-        var n = lookup(node.name, parents);
-        return [ node ].concat(n);
-    }
-    else if (node.type === 'Literal') {
-        return [ node ];
-    }
     else if (node.type === 'MemberExpression') {
         return [].concat(
             extra(node.range[0], node.object.range[0]),
@@ -48,6 +65,13 @@ function visit (node, parents) {
             next(node.property),
             extra(node.property.range[1], node.range[1])
         );
+    }
+    else if (node.type === 'Identifier') {
+        var n = lookup(node.name, parents);
+        return [ node ].concat(concatMap(n, next));
+    }
+    else if (node.type === 'Literal') {
+        return [ node ];
     }
     else return [];
 }
@@ -71,7 +95,11 @@ function lookupBody (name, p)  {
     for (var j = 0; j < p.body.length; j++) {
         if (p.body[j].type === 'FunctionDeclaration'
         && p.body[j].id.name === name) {
-            return [ p.body[j], trailing(j) ];
+            return [
+                extra(p.body[j].range[0], p.body[j].id.range[1]),
+                p.body[j],
+                trailing(j)
+            ];
         }
         if (p.body[j].type === 'VariableDeclaration') {
             for (var k = 0; k < p.body[j].declarations.length; k++) {
@@ -86,6 +114,12 @@ function lookupBody (name, p)  {
                     ];
                 }
             }
+        }
+        if (p.body[j].type === 'FunctionDeclaration') {
+            // TODO: search the arguments
+        }
+        if (p.body[j].type === 'FunctionExpression') {
+            // TODO: search the arguments
         }
     }
     
