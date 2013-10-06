@@ -4,7 +4,7 @@ var argv = require('optimist').boolean('v').argv;
 
 process.stdin.pipe(concat(function (body) {
     var source = body.toString('utf8');
-    var visited = undead(body);
+    var visited = undead(source);
     if (argv.v) console.log(visited);
     else {
         console.log(visited.map(function (v) {
