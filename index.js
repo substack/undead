@@ -134,11 +134,7 @@ function lookupBody (name, p)  {
     for (var j = 0; j < p.body.length; j++) {
         if (p.body[j].type === 'FunctionDeclaration'
         && p.body[j].id.name === name) {
-            return [
-                extra(p.body[j].range[0], p.body[j].id.range[1]),
-                p.body[j],
-                trailing(j)
-            ];
+            return [ p.body[j], trailing(j) ];
         }
         if (p.body[j].type === 'VariableDeclaration') {
             for (var k = 0; k < p.body[j].declarations.length; k++) {
