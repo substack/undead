@@ -71,13 +71,27 @@ function lookupBody (name, p)  {
     for (var j = 0; j < p.body.length; j++) {
         if (p.body[j].type === 'FunctionDeclaration'
         && p.body[j].id.name === name) {
-            var start = p.body[j].range[1];
-            var end = p.body[j+1] ? p.body[j+1].range[0] : p.range[1];
-            return [ p.body[j], extra(start, end) ];
+            return [ p.body[j], trailing(j) ];
         }
         if (p.body[j].type === 'VariableDeclaration') {
-            // TODO
-            console.error('TODO', p.body[j]);
+            for (var k = 0; k < p.body[j].declarations.length; k++) {
+                var ds = p.body[j].declarations;
+                var d = ds[k];
+                if (d.id.name === name) {
+                    return [
+                        extra(p.body[j].range[0], ds[0].range[0]),
+                        d,
+                        extra(ds[ds.length-1].range[1], p.body[j].range[1]),
+                        trailing(j)
+                    ];
+                }
+            }
         }
+    }
+    
+    function trailing (j) {
+        var start = p.body[j].range[1];
+        var end = p.body[j+1] ? p.body[j+1].range[0] : p.range[1];
+        return extra(start, end);
     }
 }
