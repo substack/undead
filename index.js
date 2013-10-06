@@ -31,10 +31,10 @@ function visit (node, parents) {
                     ),
                     n.body.range[0]
                 ),
-                visit(n.body, parents.concat(node))
+                visit(n.body, parents.concat(n))
             );
         }
-        return visit(n, parents.concat(node))
+        else return visit(n, parents.concat(node))
     }
     
     if (node.type === 'Program') {
@@ -94,7 +94,7 @@ function visit (node, parents) {
     }
     else if (node.type === 'Identifier') {
         var n = lookup(node.name, parents);
-        return [ node ].concat(concatMap(n, next));
+        return [ node ].concat(n);
     }
     else if (node.type === 'Literal') {
         return [ node ];
@@ -112,6 +112,19 @@ function lookup (name, parents) {
         if (p.type === 'Program') {
             var r = lookupBody(name, p);
             if (r) return r;
+        }
+        else if (p.type === 'FunctionDeclaration') {
+            var args = p.params;
+            for (var k = 0; k < args.length; k++) {
+                if (args[k].name === name) {
+                    return [
+                        args[k]
+                    ]
+                }
+            }
+        }
+        else if (p.type === 'FunctionExpression') {
+            // TODO: search the arguments
         }
     }
     return [];
@@ -141,12 +154,6 @@ function lookupBody (name, p)  {
                 }
             }
         }
-        if (p.body[j].type === 'FunctionDeclaration') {
-            // TODO: search the arguments
-        }
-        if (p.body[j].type === 'FunctionExpression') {
-            // TODO: search the arguments
-        }
     }
     
     function trailing (j) {
@@ -154,4 +161,11 @@ function lookupBody (name, p)  {
         var end = p.body[j+1] ? p.body[j+1].range[0] : p.range[1];
         return extra(start, end);
     }
+}
+
+function isScoped (node) {
+    return node.type === 'FunctionDeclaration'
+        || node.type === 'FunctionExpression'
+        || node.type === 'Program'
+    ;
 }
