@@ -33,7 +33,9 @@ function visit (node) {
         );
     }
     else if (node.type === 'Identifier') {
-        return [ node ];
+        var n = lookup(node.name, node.parent);
+        if (n) return [ node, n ];
+        else return [ node ];
     }
     else if (node.type === 'MemberExpression') {
         return [].concat(
@@ -49,4 +51,8 @@ function visit (node) {
 
 function extra (a, b) {
     return { type: 'Extra', range: [ a, b ] };
+}
+
+function lookup (name, node) {
+    console.error('LOOKUP', name);
 }
