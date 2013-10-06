@@ -60,23 +60,25 @@ function lookup (name, parents) {
     for (var i = parents.length - 1; i >= 0; i--) {
         var p = parents[i];
         if (p.type === 'Program') {
-            for (var j = 0; j < p.body.length; j++) {
-                if (p.body[j].type === 'FunctionDeclaration'
-                && p.body[j].id.name === name) {
-                    return [
-                        p.body[j],
-                        extra(
-                            p.body[j].range[1],
-                            p.body[j+1] ? p.body[j+1].range[0] : p.range[1]
-                        )
-                    ];
-                }
-                if (p.body[j].type === 'VariableDeclaration') {
-                    // TODO
-                    console.error('TODO', p.body[j]);
-                }
+            var l = looker(p);
+            if (l) return l;
+        }
+    }
+    
+    function looker (p)  {
+        for (var j = 0; j < p.body.length; j++) {
+            if (p.body[j].type === 'FunctionDeclaration'
+            && p.body[j].id.name === name) {
+                var start = p.body[j].range[1];
+                var end = p.body[j+1] ? p.body[j+1].range[0] : p.range[1];
+                return [ p.body[j], extra(start, end) ];
+            }
+            if (p.body[j].type === 'VariableDeclaration') {
+                // TODO
+                console.error('TODO', p.body[j]);
             }
         }
     }
+    
     return [];
 }
