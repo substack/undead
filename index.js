@@ -20,24 +20,41 @@ module.exports = function (source) {
 function visit (node, parents) {
     if (parents === undefined) parents = [];
     var next = function (n) {
-        if (n.type === 'FunctionDeclaration') {
+        if (n.type === 'Extra') return n;
+        else if (n.type === 'FunctionDeclaration') {
             return [].concat(
-                extra(n.range[0], n.id.range[1]),
-                visit(n.body, parents.concat(node)),
-                extra(n.body.range[1], n.range[1])
+                (n.params[0] ? extra(n.id.range[1], n.params[0].range[0]) : []),
+                extra(
+                    (n.params.length
+                        ? n.params[n.params.length-1].range[0]
+                        : n.id.range[1]
+                    ),
+                    n.body.range[0]
+                ),
+                visit(n.body, parents.concat(node))
             );
         }
         return visit(n, parents.concat(node))
     }
     
     if (node.type === 'Program') {
-        return concatMap(node.body, next);
+        return concatMap(node.body, function (n) {
+            if (n.type === 'FunctionDeclaration') return []
+            else return next(n)
+        });
     }
     else if (node.type === 'ExpressionStatement') {
         return [].concat(
             extra(node.range[0], node.expression.range[0]),
             next(node.expression),
             extra(node.expression.range[1], node.range[1])
+        );
+    }
+    else if (node.type === 'ReturnStatement') {
+        return [].concat(
+            extra(node.range[0], node.argument.range[0]),
+            next(node.argument),
+            extra(node.argument.range[1], node.range[1])
         );
     }
     else if (node.type === 'BlockStatement') {
@@ -55,6 +72,15 @@ function visit (node, parents) {
             extra(node.callee.range[1], args[0].range[0]),
             concatMap(args, next),
             extra(args[args.length-1].range[1], node.range[1])
+        );
+    }
+    else if (node.type === 'BinaryExpression') {
+        return [].concat(
+            extra(node.range[0], node.left.range[0]),
+            next(node.left),
+            extra(node.left.range[1], node.right.range[0]),
+            next(node.right),
+            extra(node.right.range[1], node.range[1])
         );
     }
     else if (node.type === 'MemberExpression') {
