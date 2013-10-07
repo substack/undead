@@ -21,9 +21,9 @@ module.exports = function (source) {
 function visit (node, parents) {
     if (parents === undefined) parents = [];
     
-    var next = function (n) {
+    var next = function (n, nx) {
         if (n.type === 'Extra') return n;
-        return visit(n, parents.concat(node));
+        return visit(n, parents.concat(nx || node));
     }
     
     if (node.type === 'Program') {
@@ -83,10 +83,10 @@ function visit (node, parents) {
     }
     else if (node.type === 'Identifier') {
         var n = lookup(node.name, parents);
-        return [].concat(
-            node,
-            n.display
-        );
+        if (n.node && n.node.type === 'FunctionDeclaration') {
+            return [].concat(node, n.display, next(n.node.body, n.node));
+        }
+        else return [].concat(node, n.display);
     }
     else if (node.type === 'Literal') {
         return [ node ];
@@ -134,7 +134,6 @@ function lookupBody (name, p)  {
             var display = [
                 extra(node.range[0], id.range[1]),
                 extra(id.range[1], (ps.length ? ps[0].range[0] : b.range[0])),
-                node.body,
                 extra(
                     (ps.length ? ps[ps.length-1].range[1] : id.range[1]),
                     b.range[0]
