@@ -70,6 +70,7 @@ function visit (node, parents) {
         );
     }
     else if (node.type === 'BlockStatement') {
+        if (node.body.length === 0) return node;
         return [].concat(
             extra(node.range[0], node.body[0].range[0]),
             concatMap(node.body, next),
