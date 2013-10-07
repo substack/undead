@@ -10,4 +10,4 @@ function h (n) {
     return g(n) * 111;
 }
 
-console.log(f(4, 1));
+console.log(f(4, 1, 5));
