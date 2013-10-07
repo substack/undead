@@ -24,7 +24,10 @@ function prune (src) {
         if (n.type !== 'Comma') return true;
         var nv = visited[ix+1];
         if (!nv) return false;
-        return nv.type === 'Identifier' || nv.type === 'Literal';
+        if (nv.from === 'Param') {
+            return nv.type === 'Identifier';
+        }
+        return nv.type !== 'Extra';
     });
     
     function cmp (a, b) { return a.range[0] < b.range[0] ? -1 : 1 }
@@ -140,6 +143,7 @@ function lookup (name, parents) {
                     if (args[k+1]) {
                         var comma = {
                             type: 'Comma',
+                            from: 'Param',
                             range: [ args[k].range[1], args[k+1].range[0] ]
                         };
                         return {
