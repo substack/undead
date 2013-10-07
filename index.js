@@ -21,9 +21,10 @@ function prune (src) {
     ;
     var visited = visit(ast).sort(cmp).reduce(uniq, []);
     return visited.filter(function (n, ix) {
-        return n.type !== 'Comma' || !visited[ix+1]
-            || visited[ix+1].type === 'Identifier'
-        ;
+        if (n.type !== 'Comma') return true;
+        var nv = visited[ix+1];
+        if (!nv) return false;
+        return nv.type === 'Identifier' || nv.type === 'Literal';
     });
     
     function cmp (a, b) { return a.range[0] < b.range[0] ? -1 : 1 }
@@ -41,7 +42,7 @@ function visit (node, parents) {
     if (parents === undefined) parents = [];
     
     var next = function (n, nx) {
-        if (n.type === 'Extra') return n;
+        if (n.type === 'Extra' || n.type === 'Comma') return n;
         return visit(n, parents.concat(nx || node));
     }
     
@@ -74,11 +75,19 @@ function visit (node, parents) {
     }
     else if (node.type === 'CallExpression') {
         var args = node.arguments;
+        var nodes = concatMap(args, function (x, i) {
+            if (!args[i+1]) return [ x ];
+            var comma = {
+                type: 'Comma',
+                range: [ x.range[1], args[i+1].range[0] ]
+            };
+            return [ x, comma ];
+        });
         return [].concat(
             extra(node.range[0], node.callee.range[0]),
             next(node.callee),
             extra(node.callee.range[1], args[0].range[0]),
-            concatMap(args, next),
+            concatMap(nodes, next),
             extra(args[args.length-1].range[1], node.range[1])
         );
     }
