@@ -2,7 +2,7 @@ var undead = require('../');
 var test = require('tape');
 var fs = require('fs');
 
-var files = [ 'simple.js' ];
+var files = [ 'simple.js', 'args.js' ];
 
 test('compare against expected', function (t) {
     t.plan(files.length);
