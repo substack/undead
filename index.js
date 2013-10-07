@@ -125,40 +125,36 @@ function lookup (name, parents) {
 
 function lookupBody (name, p)  {
     for (var j = 0; j < p.body.length; j++) {
-        if (p.body[j].type === 'FunctionDeclaration'
-        && p.body[j].id.name === name) {
-            var ps = p.body[j].params;
+        var node = p.body[j];
+        
+        if (node.type === 'FunctionDeclaration' && node.id.name === name) {
+            var ps = node.params;
+            var b = node.body, id = node.id;
             
             var display = [
-                extra(p.body[j].range[0], p.body[j].id.range[1]),
+                extra(node.range[0], id.range[1]),
+                extra(id.range[1], (ps.length ? ps[0].range[0] : b.range[0])),
+                node.body,
                 extra(
-                    p.body[j].id.range[1],
-                    (ps.length ? ps[0].range[0] : p.body[j].body.range[0])
-                ),
-                p.body[j].body,
-                extra(
-                    (ps.length 
-                        ? ps[ps.length-1].range[1]
-                        : p.body[j].id.range[1]
-                    ),
-                    p.body[j].body.range[0]
+                    (ps.length ? ps[ps.length-1].range[1] : id.range[1]),
+                    b.range[0]
                 ),
                 trailing(j)
             ];
-            return { display: display, node: p.body[j] };
+            return { display: display, node: node };
         }
-        if (p.body[j].type === 'VariableDeclaration') {
-            for (var k = 0; k < p.body[j].declarations.length; k++) {
-                var ds = p.body[j].declarations;
+        if (node.type === 'VariableDeclaration') {
+            for (var k = 0; k < node.declarations.length; k++) {
+                var ds = node.declarations;
                 var d = ds[k];
                 if (d.id.name === name) {
                     var display = [
-                        extra(p.body[j].range[0], ds[0].range[0]),
+                        extra(node.range[0], ds[0].range[0]),
                         d,
-                        extra(ds[ds.length-1].range[1], p.body[j].range[1]),
+                        extra(ds[ds.length-1].range[1], node.range[1]),
                         trailing(j)
                     ];
-                    return { display: display, node: p.body[j] };
+                    return { display: display, node: node };
                 }
             }
         }
