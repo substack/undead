@@ -23,20 +23,7 @@ function visit (node, parents) {
     
     var next = function (n) {
         if (n.type === 'Extra') return n;
-        else if (n.type === 'FunctionDeclaration') {
-            return [].concat(
-                (n.params[0] ? extra(n.id.range[1], n.params[0].range[0]) : []),
-                extra(
-                    (n.params.length
-                        ? n.params[n.params.length-1].range[1]
-                        : n.id.range[1]
-                    ),
-                    n.body.range[0]
-                ),
-                visit(n.body, parents.concat(n))
-            );
-        }
-        else return visit(n, parents.concat(node));
+        return visit(n, parents.concat(node));
     }
     
     if (node.type === 'Program') {
