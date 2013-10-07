@@ -154,17 +154,31 @@ function lookup (name, parents) {
             var args = p.params;
             for (var k = 0; k < args.length; k++) {
                 if (args[k].name !== name) continue;
-//console.error(parents.slice(0, i));
+                var caller = parents[i-1];
                 var display = [ args[k] ];
+                
                 if (args[k+1]) display.push({
                     type: 'Comma',
                     from: 'Param',
                     range: [ args[k].range[1], args[k+1].range[0] ]
                 });
-                return {
-                    display: display,
-                    node: [ args[k] ]
-                };
+                var nodes = [ args[k] ];
+                if (caller && caller.arguments[k]) {
+                    var ca = caller.arguments[k];
+                    var nca = caller.arguments[k+1];
+                    
+                    nodes.push(ca);
+                    display.push(ca);
+                    
+                    if (nca) {
+                        display.push({
+                            type: 'Comma',
+                            from: 'Param',
+                            range: [ ca.range[1], nca.range[0] ]
+                        });
+                    }
+                }
+                return { display: display, node: nodes };
             }
         }
     }
