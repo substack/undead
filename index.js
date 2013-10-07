@@ -1,5 +1,6 @@
 var esprima = require('esprima');
 var concatMap = require('concat-map');
+var sourceOf = require('escodegen').generate;
 
 module.exports = function (source) {
     var graph = {};
@@ -19,6 +20,7 @@ module.exports = function (source) {
 
 function visit (node, parents) {
     if (parents === undefined) parents = [];
+    
     var next = function (n) {
         if (n.type === 'Extra') return n;
         else if (n.type === 'FunctionDeclaration') {
@@ -34,7 +36,7 @@ function visit (node, parents) {
                 visit(n.body, parents.concat(n))
             );
         }
-        else return visit(n, parents.concat(node))
+        else return visit(n, parents.concat(node));
     }
     
     if (node.type === 'Program') {
@@ -94,7 +96,10 @@ function visit (node, parents) {
     }
     else if (node.type === 'Identifier') {
         var n = lookup(node.name, parents);
-        return [ node ].concat(n);
+        return [].concat(
+            node,
+            n.display
+        );
     }
     else if (node.type === 'Literal') {
         return [ node ];
@@ -117,9 +122,10 @@ function lookup (name, parents) {
             var args = p.params;
             for (var k = 0; k < args.length; k++) {
                 if (args[k].name === name) {
-                    return [
-                        args[k]
-                    ]
+                    return {
+                        display: [ args[k] ],
+                        node: args[k]
+                    };
                 }
             }
         }
@@ -127,7 +133,7 @@ function lookup (name, parents) {
             // TODO: search the arguments
         }
     }
-    return [];
+    return { display: [], node: null };
 }
 
 function lookupBody (name, p)  {
@@ -136,7 +142,7 @@ function lookupBody (name, p)  {
         && p.body[j].id.name === name) {
             var ps = p.body[j].params;
             
-            return [
+            var display = [
                 extra(p.body[j].range[0], p.body[j].id.range[1]),
                 extra(
                     p.body[j].id.range[1],
@@ -152,18 +158,20 @@ function lookupBody (name, p)  {
                 ),
                 trailing(j)
             ];
+            return { display: display, node: p.body[j] };
         }
         if (p.body[j].type === 'VariableDeclaration') {
             for (var k = 0; k < p.body[j].declarations.length; k++) {
                 var ds = p.body[j].declarations;
                 var d = ds[k];
                 if (d.id.name === name) {
-                    return [
+                    var display = [
                         extra(p.body[j].range[0], ds[0].range[0]),
                         d,
                         extra(ds[ds.length-1].range[1], p.body[j].range[1]),
                         trailing(j)
                     ];
+                    return { display: display, node: p.body[j] };
                 }
             }
         }
