@@ -9,11 +9,6 @@ module.exports = function (src, opts) {
     if (opts.tokens) return visited;
     
     return visited.map(function (v, ix) {
-        if (v.type === 'Comma' && visited[ix+1]
-        && visited[ix+1].type !== 'Identifier') {
-            return;
-        }
-        
         return src.slice(v.range[0], v.range[1]);
     }).join('');
 };
@@ -24,7 +19,12 @@ function prune (src) {
         ? esprima.parse(src, { range: true })
         : src
     ;
-    return visit(ast).sort(cmp).reduce(uniq, []);
+    var visited = visit(ast).sort(cmp).reduce(uniq, []);
+    return visited.filter(function (n, ix) {
+        return n.type !== 'Comma' || !visited[ix+1]
+            || visited[ix+1].type === 'Identifier'
+        ;
+    });
     
     function cmp (a, b) { return a.range[0] < b.range[0] ? -1 : 1 }
     function uniq (acc, x) {
