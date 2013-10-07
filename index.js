@@ -1,10 +1,29 @@
 var esprima = require('esprima');
 var concatMap = require('concat-map');
-var sourceOf = require('escodegen').generate;
 
-module.exports = function (source) {
+module.exports = function (src, opts) {
+    if (!src) return '';
+    if (!opts) opts = {};
+    
+    var visited = prune(src);
+    if (opts.tokens) return visited;
+    
+    return visited.map(function (v, ix) {
+        if (v.type === 'Comma' && visited[ix+1]
+        && visited[ix+1].type !== 'Identifier') {
+            return;
+        }
+        
+        return src.slice(v.range[0], v.range[1]);
+    }).join('');
+};
+
+function prune (src) {
     var graph = {};
-    var ast = esprima.parse(source, { range: true });
+    var ast = typeof src === 'string'
+        ? esprima.parse(src, { range: true })
+        : src
+    ;
     return visit(ast).sort(cmp).reduce(uniq, []);
     
     function cmp (a, b) { return a.range[0] < b.range[0] ? -1 : 1 }
