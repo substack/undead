@@ -76,9 +76,17 @@ function visit (node, parents) {
             extra(node.body[node.body.length-1].range[1], node.range[1])
         );
     }
+    else if (node.type === 'FunctionExpression') {
+        console.error('TODO');
+    }
     else if (node.type === 'CallExpression') {
         var args = node.arguments;
         var nodes = concatMap(args, function (x, i) {
+            if (x.type !== 'CallExpression'
+            && x.type !== 'AssignmentExpression') {
+                return []; // arguments without side effects get pulled in
+            }
+            
             if (!args[i+1]) return [ x ];
             var comma = {
                 type: 'Comma',
@@ -114,8 +122,13 @@ function visit (node, parents) {
     }
     else if (node.type === 'Identifier') {
         var n = lookup(node.name, parents);
-        if (n.node && n.node.type === 'FunctionDeclaration') {
-            return [].concat(node, n.display, next(n.node.body, n.node));
+        if (n.node && n.node[0].type === 'FunctionDeclaration') {
+            return [].concat(
+                node,
+                n.display,
+                next(n.node[0].body, n.node[0]),
+                concatMap(n.node.slice(1), next)
+            );
         }
         else return [].concat(node, n.display);
     }
@@ -136,27 +149,23 @@ function lookup (name, parents) {
             var r = lookupBody(name, p);
             if (r) return r;
         }
-        else if (p.type === 'FunctionDeclaration') {
+        else if (p.type === 'FunctionDeclaration'
+        || p.type === 'FunctionExpression') {
             var args = p.params;
             for (var k = 0; k < args.length; k++) {
-                if (args[k].name === name) {
-                    if (args[k+1]) {
-                        var comma = {
-                            type: 'Comma',
-                            from: 'Param',
-                            range: [ args[k].range[1], args[k+1].range[0] ]
-                        };
-                        return {
-                            display: [ args[k], comma ],
-                            node: args[k]
-                        };
-                    }
-                    else return { display: [ args[k] ], node: args[k] };
-                }
+                if (args[k].name !== name) continue;
+//console.error(parents.slice(0, i));
+                var display = [ args[k] ];
+                if (args[k+1]) display.push({
+                    type: 'Comma',
+                    from: 'Param',
+                    range: [ args[k].range[1], args[k+1].range[0] ]
+                });
+                return {
+                    display: display,
+                    node: [ args[k] ]
+                };
             }
-        }
-        else if (p.type === 'FunctionExpression') {
-            // TODO: search the arguments
         }
     }
     return { display: [], node: null };
@@ -179,7 +188,7 @@ function lookupBody (name, p)  {
                 ),
                 trailing(j)
             ];
-            return { display: display, node: node };
+            return { display: display, node: [ node ] };
         }
         if (node.type === 'VariableDeclaration') {
             for (var k = 0; k < node.declarations.length; k++) {
@@ -192,7 +201,7 @@ function lookupBody (name, p)  {
                         extra(ds[ds.length-1].range[1], node.range[1]),
                         trailing(j)
                     ];
-                    return { display: display, node: node };
+                    return { display: display, node: [ node ] };
                 }
             }
         }
