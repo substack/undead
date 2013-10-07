@@ -109,10 +109,17 @@ function lookup (name, parents) {
             var args = p.params;
             for (var k = 0; k < args.length; k++) {
                 if (args[k].name === name) {
-                    return {
-                        display: [ args[k] ],
-                        node: args[k]
-                    };
+                    if (args[k+1]) {
+                        var comma = {
+                            type: 'Comma',
+                            range: [ args[k].range[1], args[k+1].range[0] ]
+                        };
+                        return {
+                            display: [ args[k], comma ],
+                            node: args[k]
+                        };
+                    }
+                    else return { display: [ args[k] ], node: args[k] };
                 }
             }
         }
