@@ -1,4 +1,4 @@
-function f (n, j) {
+function f (n, j, k) {
     return n + 2;
 }
 
