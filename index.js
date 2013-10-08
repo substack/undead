@@ -83,6 +83,8 @@ function visit (node, parents) {
     }
     else if (node.type === 'CallExpression') {
         var args = node.arguments;
+        if (args.length === 0) return [ node ];
+        
         var nodes = concatMap(args, function (x, i) {
             if (!hasSideEffects(x)) return [];
             

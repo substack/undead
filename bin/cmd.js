@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var undead = require('../');
 var concat = require('concat-stream');
 var argv = require('optimist').boolean('v').argv;
