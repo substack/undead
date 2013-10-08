@@ -46,7 +46,11 @@ function visit (node, parents) {
     
     var next = function (n, nx) {
         if (n.type === 'Extra' || n.type === 'Comma') return n;
-        return visit(n, parents.concat(nx || node));
+        return visit(n,
+            nx || node.type === 'CallExpression' || node.type === 'Program'
+            ? parents.concat(nx || node)
+            : parents
+        );
     }
     
     if (node.type === 'Program') {
@@ -77,16 +81,10 @@ function visit (node, parents) {
             extra(node.body[node.body.length-1].range[1], node.range[1])
         );
     }
-    else if (node.type === 'FunctionExpression') {
-        console.error('TODO');
-    }
     else if (node.type === 'CallExpression') {
         var args = node.arguments;
         var nodes = concatMap(args, function (x, i) {
-            if (x.type !== 'CallExpression'
-            && x.type !== 'AssignmentExpression') {
-                return []; // arguments without side effects get pulled in
-            }
+            if (!hasSideEffects(x)) return [];
             
             if (!args[i+1]) return [ x ];
             var comma = {
@@ -123,11 +121,13 @@ function visit (node, parents) {
     }
     else if (node.type === 'Identifier') {
         var n = lookup(node.name, parents);
-        if (n.node && n.node[0].type === 'FunctionDeclaration') {
+        var x = n.node && n.node[n.node.length-1];
+        var t = x && x.type;
+        if (t === 'FunctionDeclaration' || t === 'FunctionExpression') {
             return [].concat(
                 node,
                 n.display,
-                next(n.node[0].body, n.node[0]),
+                next(x.body, x),
                 concatMap(n.node.slice(1), next)
             );
         }
@@ -234,4 +234,13 @@ function isScoped (node) {
         || node.type === 'FunctionExpression'
         || node.type === 'Program'
     ;
+}
+
+function hasSideEffects (x) {
+    if (x.type === 'CallExpression') return true;
+    if (x.type === 'AssignmentExpression') return true;
+    if (x.type === 'BinaryExpression') {
+        return hasSideEffects(x.left) || hasSideEffects(x.right);
+    }
+    return false;
 }
