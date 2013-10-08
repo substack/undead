@@ -110,6 +110,13 @@ function visit (node, parents) {
             extra(node.right.range[1], node.range[1])
         );
     }
+    else if (node.type === 'UnaryExpression') {
+        return [].concat(
+            extra(node.range[0], node.argument.range[0]),
+            next(node.argument),
+            extra(node.argument.range[1], node.range[1])
+        );
+    }
     else if (node.type === 'MemberExpression') {
         return [].concat(
             extra(node.range[0], node.object.range[0]),
@@ -241,6 +248,12 @@ function hasSideEffects (x) {
     if (x.type === 'AssignmentExpression') return true;
     if (x.type === 'BinaryExpression') {
         return hasSideEffects(x.left) || hasSideEffects(x.right);
+    }
+    if (x.type === 'UnaryExpression') {
+        return hasSideEffects(x.argument);
+    }
+    if (x.type === 'MemberExpression') {
+        return hasSideEffects(x.property) || hasSideEffects(x.object);
     }
     return false;
 }
