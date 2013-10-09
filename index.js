@@ -86,14 +86,15 @@ function visit (node, parents) {
         if (args.length === 0) return [ node ];
         
         var nodes = concatMap(args, function (x, i) {
-            if (!hasSideEffects(x)) return [];
+            var resolved = resolveArg(i, node, parents);
+            if (!resolved && !hasSideEffects(x)) return [];
             
             if (!args[i+1]) return [ x ];
             var comma = {
                 type: 'Comma',
                 range: [ x.range[1], args[i+1].range[0] ]
             };
-            return [ x, comma ];
+            return (resolved || []).concat(x, comma);
         });
         return [].concat(
             extra(node.range[0], node.callee.range[0]),
@@ -258,4 +259,13 @@ function hasSideEffects (x) {
         return hasSideEffects(x.property) || hasSideEffects(x.object);
     }
     return false;
+}
+
+function resolveArg (ix, node, parents) {
+    var x = lookup(node.callee.name, parents);
+    if (!x) return null;
+    if (x.display[1] && x.display[1].params && x.display[1].params[ix]) {
+        return [ x.display[1].params[ix] ];
+    }
+    return null;
 }
