@@ -89,7 +89,7 @@ function visit (node, parents) {
             var resolved = resolveArg(i, node, parents);
             if (!resolved && !hasSideEffects(x)) return [];
             
-            if (!args[i+1]) return [ x ];
+            if (!args[i+1]) return (resolved || []).concat(x);
             var comma = {
                 type: 'Comma',
                 range: [ x.range[1], args[i+1].range[0] ]
@@ -274,8 +274,8 @@ function hasSideEffects (x) {
 function resolveArg (ix, node, parents) {
     var x = lookup(node.callee.name, parents);
     if (!x) return null;
-    if (x.display[1] && x.display[1].params && x.display[1].params[ix]) {
-        return [ x.display[1].params[ix] ];
+    if (x.node && x.node[1] && x.node[1].params && x.node[1].params[ix]) {
+        return [ x.node[1].params[ix] ];
     }
     return null;
 }
