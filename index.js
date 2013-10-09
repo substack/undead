@@ -51,7 +51,7 @@ function visit (node, parents) {
             ? parents.concat(nx || node)
             : parents
         );
-    }
+    };
     
     if (node.type === 'Program') {
         return concatMap(node.body, function (n) {
@@ -178,8 +178,18 @@ function lookup (name, parents) {
                     var ca = caller.arguments[k];
                     var nca = caller.arguments[k+1];
                     
+                    if (ca.type === 'FunctionExpression' && ca.params.length) {
+                        display.push(extra(ca.range[0], ca.params[0].range[0]));
+                        display.push(extra(
+                            ca.params[ca.params.length-1].range[1],
+                            ca.body.range[0]
+                        ));
+                    }
+                    else if (ca.type === 'FunctionExpression') {
+                        display.push(extra(ca.range[0], ca.body.range[0]));
+                    }
+                    else display.push(ca);
                     nodes.push(ca);
-                    display.push(ca);
                     
                     if (nca) {
                         display.push({
