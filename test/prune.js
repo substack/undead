@@ -3,8 +3,8 @@ var test = require('tape');
 var fs = require('fs');
 
 var files = [
-    'simple.js', 'args0.js', 'args1.js', 'call_expr_string.js',
-    'call_expr.js'
+    'simple.js', 'args0.js', 'args1.js',
+    'call_expr.js', 'call_expr_n.js', 'call_expr_string.js'
 ];
 
 test('compare against expected', function (t) {
