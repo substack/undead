@@ -91,7 +91,15 @@ function visit (node, parents) {
         
         var extras = [];
         var nodes = concatMap(args, function (x, i) {
-            extras.push.apply(extras, idLookup(x, parents));
+            var ids = idLookup(x, parents);
+            extras.push.apply(extras, ids.reduce(function (acc, id, j) {
+                if (!ids[j+1]) return acc.concat(id);
+                
+                return acc.concat(id, {
+                    type: 'Comma',
+                    range: [ id.range[1], ids[j+1].range[0] ]
+                });
+            }, []));
             
             if (resolved && !hasSideEffects(x)) return [];
             
