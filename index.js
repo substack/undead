@@ -27,7 +27,11 @@ function prune (src) {
         if (nv.from === 'Param') {
             return nv.type === 'Identifier';
         }
-        return nv.type !== 'Extra';
+        if (nv.type === 'Extra') {
+            var s = src.slice(nv.range[0], nv.range[1]);
+            return !/^\s*\)\s*$/.test(s);
+        }
+        return true;
     });
     
     function cmp (a, b) { return a.range[0] < b.range[0] ? -1 : 1 }
@@ -91,14 +95,16 @@ function visit (node, parents) {
         
         var extras = [];
         var nodes = concatMap(args, function (x, i) {
-            var ids = idLookup(x, parents);
+            var ids = idLookup(x, parents).sort(function cmp (a, b) {
+                return a.range[0] < b.range[0] ? -1 : 1;
+            });
+            
             extras.push.apply(extras, ids.reduce(function (acc, id, j) {
                 if (!ids[j+1]) return acc.concat(id);
                 
-                return acc.concat(id, {
-                    type: 'Comma',
-                    range: [ id.range[1], ids[j+1].range[0] ]
-                });
+                var rx = [ id.range[1], ids[j+1].range[0] ];
+                if (rx[0] >= rx[1]) return acc.concat(id);
+                return acc.concat(id, { type: 'Comma', range: rx });
             }, []));
             
             if (resolved && !hasSideEffects(x)) return [];
@@ -108,6 +114,7 @@ function visit (node, parents) {
                 type: 'Comma',
                 range: [ x.range[1], args[i+1].range[0] ]
             };
+            if (comma.range[0] >= comma.range[1]) return [ x ];
             return [ x, comma ];
         });
         
