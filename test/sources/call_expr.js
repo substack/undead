@@ -1,5 +1,5 @@
 function f (n, g) {
-    return g(4);
+    return g();
 }
 
-console.log(f(3, function (x, y) { console.log(x) }));
+console.log(f(3, function (x, y) { console.log('!!!') }));

@@ -39,7 +39,7 @@ function prune (src) {
         }
         return acc.concat(x);
     }
-};
+}
 
 function visit (node, parents) {
     if (parents === undefined) parents = [];
@@ -83,19 +83,27 @@ function visit (node, parents) {
     }
     else if (node.type === 'CallExpression') {
         var args = node.arguments;
-        if (args.length === 0) return [ node ];
+        //if (args.length === 0) return [ node ];
         
         var nodes = concatMap(args, function (x, i) {
-            var resolved = resolveArg(i, node, parents);
-            if (!resolved && !hasSideEffects(x)) return [];
+            if (!hasSideEffects(x)) return [];
             
-            if (!args[i+1]) return (resolved || []).concat(x);
+            if (!args[i+1]) return [ x ];
             var comma = {
                 type: 'Comma',
                 range: [ x.range[1], args[i+1].range[0] ]
             };
-            return (resolved || []).concat(x, comma);
+            return [ x, comma ];
         });
+        
+        if (args.length === 0) {
+            return [].concat(
+                extra(node.range[0], node.callee.range[0]),
+                next(node.callee),
+                extra(node.callee.range[1], node.range[1])
+            );
+        }
+        
         return [].concat(
             extra(node.range[0], node.callee.range[0]),
             next(node.callee),
@@ -269,13 +277,4 @@ function hasSideEffects (x) {
         return hasSideEffects(x.property) || hasSideEffects(x.object);
     }
     return false;
-}
-
-function resolveArg (ix, node, parents) {
-    var x = lookup(node.callee.name, parents);
-    if (!x) return null;
-    if (x.node && x.node[1] && x.node[1].params && x.node[1].params[ix]) {
-        return [ x.node[1].params[ix] ];
-    }
-    return null;
 }
