@@ -89,7 +89,10 @@ function visit (node, parents) {
             && Boolean(lookup(node.callee.name, parents).node)
         ;
         
+        var extras = [];
         var nodes = concatMap(args, function (x, i) {
+            extras.push.apply(extras, idLookup(x, parents));
+            
             if (resolved && !hasSideEffects(x)) return [];
             
             if (!args[i+1]) return [ x ];
@@ -102,6 +105,7 @@ function visit (node, parents) {
         
         if (args.length === 0) {
             return [].concat(
+                extras,
                 extra(node.range[0], node.callee.range[0]),
                 next(node.callee),
                 extra(node.callee.range[1], node.range[1])
@@ -109,6 +113,7 @@ function visit (node, parents) {
         }
         
         return [].concat(
+            extras,
             extra(node.range[0], node.callee.range[0]),
             next(node.callee),
             extra(node.callee.range[1], args[0].range[0]),
@@ -281,4 +286,29 @@ function hasSideEffects (x) {
         return hasSideEffects(x.property) || hasSideEffects(x.object);
     }
     return false;
+}
+
+function idLookup (x, parents) {
+    if (x.type === 'Identifier') {
+        var n = lookup(x.name, parents);
+        return (n.node || []).concat(n.display);
+    }
+    
+    if (x.type === 'CallExpression') return [];
+    if (x.type === 'AssignmentExpression') return [];
+    
+    if (x.type === 'BinaryExpression') {
+        return idLookup(x.left, parents)
+            .concat(idLookup(x.right, parents))
+        ;
+    }
+    if (x.type === 'UnaryExpression') {
+        return idLookup(x.argument, parents);
+    }
+    if (x.type === 'MemberExpression') {
+        return idLookup(x.property, parents)
+            .concat(idLookup(x.object, parents))
+        ;
+    }
+    return [];
 }
