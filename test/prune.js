@@ -2,7 +2,9 @@ var undead = require('../');
 var test = require('tape');
 var fs = require('fs');
 
-var files = [ 'simple.js', 'args0.js', 'args1.js', 'call_expr.js' ];
+var files = [
+    'simple.js', 'args0.js', 'args1.js', 'call_expr_string.js'
+];
 
 test('compare against expected', function (t) {
     t.plan(files.length);
