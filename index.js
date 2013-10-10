@@ -83,10 +83,14 @@ function visit (node, parents) {
     }
     else if (node.type === 'CallExpression') {
         var args = node.arguments;
-        //if (args.length === 0) return [ node ];
+        
+        // TODO: static property lookups
+        var resolved = node.callee.type === 'Identifier'
+            && Boolean(lookup(node.callee.name, parents).node)
+        ;
         
         var nodes = concatMap(args, function (x, i) {
-            if (!hasSideEffects(x)) return [];
+            if (resolved && !hasSideEffects(x)) return [];
             
             if (!args[i+1]) return [ x ];
             var comma = {
