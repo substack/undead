@@ -50,8 +50,9 @@ function visit (node, parents) {
     
     var next = function (n, nx) {
         if (n.type === 'Extra' || n.type === 'Comma') return n;
-        return visit(n,
-            nx || node.type === 'CallExpression' || node.type === 'Program'
+        return visit(n, nx
+            || node.type === 'CallExpression'
+            || node.type === 'Program'
             ? parents.concat(nx || node)
             : parents
         );
@@ -177,6 +178,14 @@ function visit (node, parents) {
     }
     else if (node.type === 'Literal') {
         return [ node ];
+    }
+    else if (node.type === 'VariableDeclaration') {
+        if (hasSideEffects(node.declarations)) {
+            return [ node ];
+        }
+        return concatMap(node.declarations, function (n) {
+            return idLookup(n, parents);
+        });
     }
     else return [];
 }

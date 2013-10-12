@@ -1,5 +1,5 @@
 function f (n, j, k) {
-    return n + 2;
+    return n + 2 * j;
 }
 
 function g (n) {
@@ -10,4 +10,5 @@ function h (n) {
     return g(n) * 111;
 }
 
-console.log(f(4));
+var n = 5;
+console.log(f(4, n));
